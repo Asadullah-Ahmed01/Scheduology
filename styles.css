@@ -96,26 +96,44 @@ a:hover { text-decoration: underline; }
 .lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 46ch; line-height: 1.6; }
 .hero-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
 .hero-card {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg); padding: 28px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
   transition: var(--transition);
 }
 .hero-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  background: rgba(255, 255, 255, 0.85);
 }
 .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
-.stat { background: var(--paper); border-radius: 14px; padding: 16px; }
+.stat { 
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 14px; 
+  padding: 16px;
+}
 .stat b { display: block; font-size: 1.4rem; font-family: 'Times New Roman', Times, serif; }
 .stat span { color: var(--muted); font-size: 12px; }
 .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding-bottom: 80px; }
 .feature {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 24px; transition: var(--transition);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: var(--transition);
 }
 .feature:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.8);
 }
 .feature h3 { margin: 0 0 10px; font-size: 1.25rem; color: var(--pine); }
 .feature p { margin: 0; color: var(--ink-soft); line-height: 1.55; }

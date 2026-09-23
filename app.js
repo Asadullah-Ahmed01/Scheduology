@@ -24,6 +24,7 @@ let currentCourses = [];
 let currentTimetable = null;
 let allAttendance = {};
 let currentView = 'landing';
+let currentStep = 1; // For timetable setup wizard
 
 // ============================================
 // INITIALIZATION
@@ -162,7 +163,6 @@ function setupEventListeners() {
  */
 function setupNavigation() {
   // This will be populated when user is logged in
-  // For now, just handle the basic navigation
 }
 
 /**
@@ -192,6 +192,8 @@ function navigate() {
     showSemesterPage();
   } else if (path.startsWith('settings')) {
     showSettingsPage();
+  } else if (path.startsWith('setup')) {
+    showSetupPage();
   } else {
     // Unknown route - show landing page
     window.location.hash = '#/';
@@ -232,8 +234,6 @@ function showLandingPage() {
     landingEl.classList.remove('hidden');
   }
   currentView = 'landing';
-  
-  // Scroll to top
   window.scrollTo(0, 0);
 }
 
@@ -265,12 +265,10 @@ function showSignupPage() {
  * Show today's classes page
  */
 function showTodayPage() {
-  // Check if user is logged in or in demo mode
   const isLoggedIn = currentUser !== null;
   const isDemo = localStorage.getItem('scheduology_demo') === 'true';
   
   if (!isLoggedIn && !isDemo) {
-    // Redirect to landing page
     window.location.hash = '#/';
     navigate();
     return;
@@ -351,6 +349,28 @@ function showSettingsPage() {
   window.scrollTo(0, 0);
 }
 
+/**
+ * Show setup page (timetable configuration)
+ */
+function showSetupPage() {
+  const isLoggedIn = currentUser !== null;
+  const isDemo = localStorage.getItem('scheduology_demo') === 'true';
+  
+  if (!isLoggedIn && !isDemo) {
+    window.location.hash = '#/';
+    navigate();
+    return;
+  }
+  
+  if (appEl) {
+    appEl.classList.remove('hidden');
+    renderSetupPage();
+    renderAppNav();
+  }
+  currentView = 'setup';
+  window.scrollTo(0, 0);
+}
+
 // ============================================
 // RENDER FUNCTIONS
 // ============================================
@@ -364,27 +384,49 @@ function renderLoginForm() {
   
   authCard.innerHTML = `
     <div class="page-title">
-      <h1>Log in</h1>
+      <h1>Welcome back</h1>
       <p>Sign in to access your attendance data</p>
     </div>
     
-    <form id="login-form" class="cards">
+    <div class="cards">
       <div class="card">
-        <div class="field">
-          <span>Email</span>
-          <input type="email" id="login-email" placeholder="your@email.com" required />
+        <div class="wizard-steps">
+          <div class="step on">Sign In</div>
         </div>
-        <div class="field">
-          <span>Password</span>
-          <input type="password" id="login-password" placeholder="Enter your password" required />
+        
+        <button class="btn btn-ghost btn-block" onclick="handleGoogleLogin()" style="margin-bottom: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-right: 8px;">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+        
+        <div style="display: flex; align-items: center; gap: 8px; margin: 16px 0;">
+          <div style="flex: 1; height: 1px; background: var(--line);"></div>
+          <span class="tiny muted">or</span>
+          <div style="flex: 1; height: 1px; background: var(--line);"></div>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        
+        <form id="login-form">
+          <div class="field">
+            <span>Email</span>
+            <input type="email" id="login-email" placeholder="your@email.com" required />
+          </div>
+          <div class="field">
+            <span>Password</span>
+            <input type="password" id="login-password" placeholder="Enter your password" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Sign In with Email</button>
+        </form>
+        
+        <p class="tiny" style="text-align: center; margin-top: 16px;">
+          Don't have an account? <a href="#/signup" style="color: var(--pine);">Create one</a>
+        </p>
       </div>
-      
-      <div class="card" style="text-align: center;">
-        <p class="tiny">Don't have an account? <a href="#/signup" style="color: var(--pine);">Create one</a></p>
-      </div>
-    </form>
+    </div>
   `;
   
   // Set up form submission
@@ -403,40 +445,62 @@ function renderSignupForm() {
   
   authCard.innerHTML = `
     <div class="page-title">
-      <h1>Create account</h1>
-      <p>Start tracking your attendance</p>
+      <h1>Create your account</h1>
+      <p>Start tracking your attendance and stay eligible for finals</p>
     </div>
     
-    <form id="signup-form" class="cards">
+    <div class="cards">
       <div class="card">
-        <div class="field">
-          <span>Name</span>
-          <input type="text" id="signup-name" placeholder="Your full name" required />
+        <div class="wizard-steps">
+          <div class="step on">Sign Up</div>
         </div>
-        <div class="field">
-          <span>Email</span>
-          <input type="email" id="signup-email" placeholder="your@email.com" required />
+        
+        <button class="btn btn-ghost btn-block" onclick="handleGoogleSignup()" style="margin-bottom: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-right: 8px;">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+        
+        <div style="display: flex; align-items: center; gap: 8px; margin: 16px 0;">
+          <div style="flex: 1; height: 1px; background: var(--line);"></div>
+          <span class="tiny muted">or</span>
+          <div style="flex: 1; height: 1px; background: var(--line);"></div>
         </div>
-        <div class="field">
-          <span>Password</span>
-          <input type="password" id="signup-password" placeholder="Create a password" required minlength="8" />
-        </div>
-        <div class="field">
-          <span>University Attendance Requirement (%)</span>
-          <select id="signup-requirement" required>
-            <option value="75">75%</option>
-            <option value="80">80%</option>
-            <option value="85">85%</option>
-            <option value="90">90%</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        
+        <form id="signup-form">
+          <div class="field">
+            <span>Full Name</span>
+            <input type="text" id="signup-name" placeholder="Your full name" required />
+          </div>
+          <div class="field">
+            <span>Email</span>
+            <input type="email" id="signup-email" placeholder="your@email.com" required />
+          </div>
+          <div class="field">
+            <span>Password</span>
+            <input type="password" id="signup-password" placeholder="Create a password" required minlength="8" />
+          </div>
+          <div class="field">
+            <span>University Attendance Requirement (%)</span>
+            <select id="signup-requirement" required>
+              <option value="75">75%</option>
+              <option value="80">80%</option>
+              <option value="85">85%</option>
+              <option value="90">90%</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create Account with Email</button>
+        </form>
+        
+        <p class="tiny" style="text-align: center; margin-top: 16px;">
+          Already have an account? <a href="#/login" style="color: var(--pine);">Sign in</a>
+        </p>
       </div>
-      
-      <div class="card" style="text-align: center;">
-        <p class="tiny">Already have an account? <a href="#/login" style="color: var(--pine);">Log in</a></p>
-      </div>
-    </form>
+    </div>
   `;
   
   // Set up form submission
@@ -459,7 +523,7 @@ function renderAppNav() {
   const links = [
     { href: '#today', text: 'Today' },
     { href: '#courses', text: 'Courses' },
-    { href: '#semester', text: 'Semester' },
+    { href: '#setup', text: 'Timetable' },
     { href: '#settings', text: 'Settings' }
   ];
   
@@ -490,7 +554,6 @@ function renderTodayPage() {
   if (!pageEl) return;
   
   const today = new Date();
-  const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][today.getDay()];
   const dateStr = today.toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
@@ -498,10 +561,7 @@ function renderTodayPage() {
     day: 'numeric' 
   });
   
-  // Get today's classes
   const classes = getTodaysClasses(currentCourses, today);
-  
-  // Calculate stats for each course
   const todayDateStr = formatDate(today);
   
   pageEl.innerHTML = `
@@ -516,9 +576,6 @@ function renderTodayPage() {
           const course = currentCourses.find(c => c.id === cls.courseId);
           if (!course) return '';
           
-          const courseAttendance = getCourseAttendance(cls.courseId);
-          const todayStatus = allAttendance[todayDateStr]?.[cls.courseId];
-          
           const stats = calculateCourseStats(course, allAttendance, 
             currentSemester?.startDate ? new Date(currentSemester.startDate) : new Date(),
             currentSemester?.endDate ? new Date(currentSemester.endDate) : new Date(),
@@ -526,10 +583,7 @@ function renderTodayPage() {
             currentSemester?.additionalHolidays || []
           );
           
-          const statusClass = todayStatus ? `status-${todayStatus}` : 'status-pending';
-          const statusText = todayStatus ? 
-            todayStatus.charAt(0).toUpperCase() + todayStatus.slice(1) : 
-            'Mark attendance';
+          const todayStatus = allAttendance[todayDateStr]?.[cls.courseId];
           
           return `
             <div class="card">
@@ -561,7 +615,7 @@ function renderTodayPage() {
                   <button class="btn btn-danger btn-sm" onclick="markAttendance('${cls.courseId}', 'absent', '${todayDateStr}')">Absent</button>
                   <button class="btn btn-soft btn-sm" onclick="markAttendance('${cls.courseId}', 'cancelled', '${todayDateStr}')">Cancelled</button>
                 ` : `
-                  <button class="btn btn-ghost btn-sm" disabled>${statusText}</button>
+                  <button class="btn btn-ghost btn-sm" disabled>${todayStatus.charAt(0).toUpperCase() + todayStatus.slice(1)}</button>
                   <button class="btn btn-soft btn-sm" onclick="markAttendance('${cls.courseId}', 'present', '${todayDateStr}')">Change</button>
                 `}
               </div>
@@ -573,7 +627,7 @@ function renderTodayPage() {
       <div class="empty">
         <h3>No classes today</h3>
         <p>Enjoy your day off!</p>
-        <a href="#courses" class="btn btn-primary">View all courses</a>
+        <a href="#setup" class="btn btn-primary">Set up your timetable</a>
       </div>
     `}
   `;
@@ -593,7 +647,7 @@ function renderCoursesPage() {
   pageEl.innerHTML = `
     <div class="page-title">
       <h1>Your Courses</h1>
-      <a href="#semester" class="btn btn-primary btn-sm">Edit Semester</a>
+      <a href="#setup" class="btn btn-primary btn-sm">Edit Timetable</a>
     </div>
     
     ${currentCourses.length > 0 ? `
@@ -644,7 +698,7 @@ function renderCoursesPage() {
       <div class="empty">
         <h3>No courses yet</h3>
         <p>Start by setting up your semester and adding courses.</p>
-        <a href="#semester" class="btn btn-primary">Set up semester</a>
+        <a href="#setup" class="btn btn-primary">Set up timetable</a>
       </div>
     `}
   `;
@@ -658,7 +712,7 @@ function renderSemesterPage() {
   
   pageEl.innerHTML = `
     <div class="page-title">
-      <h1>Semester Setup</h1>
+      <h1>Semester Settings</h1>
       <p>Configure your semester dates and settings</p>
     </div>
     
@@ -718,22 +772,6 @@ function renderSemesterPage() {
           <button class="btn btn-soft" onclick="addHoliday()" style="margin-top: 8px;">Add Holiday</button>
         </div>
       </div>
-      
-      <div class="card">
-        <h2>Courses</h2>
-        <p class="tiny muted" style="margin-bottom: 12px;">${currentCourses.length} courses configured</p>
-        <a href="#/courses/new" class="btn btn-primary">Add Course</a>
-        ${currentCourses.length > 0 ? `
-          <div style="margin-top: 16px;">
-            ${currentCourses.map(course => `
-              <div class="list-row">
-                <span>${course.code || course.name}</span>
-                <button class="btn btn-ghost btn-sm" onclick="editCourse('${course.id}')">Edit</button>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
-      </div>
     </div>
   `;
   
@@ -786,6 +824,394 @@ function renderSettingsPage() {
   `;
 }
 
+/**
+ * Render timetable setup page
+ */
+function renderSetupPage() {
+  if (!pageEl) return;
+  
+  const hasCourses = currentCourses && currentCourses.length > 0;
+  
+  pageEl.innerHTML = `
+    <div class="page-title">
+      <h1>Set Up Your Timetable</h1>
+      <p>Add your university schedule to start tracking attendance</p>
+    </div>
+    
+    <div class="cards">
+      <div class="card">
+        <h2>Choose Your Method</h2>
+        <p class="tiny muted" style="margin-bottom: 16px;">Select how you want to add your timetable:</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+          <button class="btn btn-primary btn-block" onclick="showManualEntry()" style="padding: 24px; height: auto;">
+            <div style="text-align: center;">
+              <div style="font-size: 24px; margin-bottom: 8px;">📝</div>
+              <div>Manual Entry</div>
+              <div class="tiny muted">Add courses one by one</div>
+            </div>
+          </button>
+          
+          <button class="btn btn-soft btn-block" onclick="showUploadOption()" style="padding: 24px; height: auto;">
+            <div style="text-align: center;">
+              <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
+              <div>Upload Image</div>
+              <div class="tiny muted">Take a photo of your timetable</div>
+            </div>
+          </button>
+        </div>
+        
+        ${hasCourses ? `
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line);">
+            <h3 style="margin: 0 0 12px;">Your Courses (${currentCourses.length})</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              ${currentCourses.map(course => `
+                <span class="chip" style="background: ${course.color || '#1f7a5f'}; color: white;">
+                  ${course.code || course.name}
+                </span>
+              `).join('')}
+            </div>
+            <div style="margin-top: 16px;">
+              <a href="#today" class="btn btn-primary btn-sm">View Today's Classes</a>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+      
+      ${hasCourses ? '' : `
+        <div class="card hidden" id="manual-entry-card">
+          <h2>Manual Entry</h2>
+          <p class="tiny muted" style="margin-bottom: 16px;">Add your courses and their weekly schedule:</p>
+          
+          <form id="course-form">
+            <div class="grid-2" style="gap: 16px;">
+              <div class="field">
+                <span>Course Name</span>
+                <input type="text" id="course-name" placeholder="e.g., Calculus I" required />
+              </div>
+              <div class="field">
+                <span>Course Code</span>
+                <input type="text" id="course-code" placeholder="e.g., MATH 101" />
+              </div>
+            </div>
+            
+            <div class="grid-2" style="gap: 16px; margin-top: 16px;">
+              <div class="field">
+                <span>Attendance Requirement (%)</span>
+                <select id="course-requirement">
+                  <option value="75">75%</option>
+                  <option value="80">80%</option>
+                  <option value="85">85%</option>
+                  <option value="90">90%</option>
+                </select>
+              </div>
+              <div class="field">
+                <span>Color</span>
+                <input type="color" id="course-color" value="#1f7a5f" />
+              </div>
+            </div>
+            
+            <div style="margin-top: 16px;">
+              <span>Class Sessions</span>
+              <div id="sessions-container" style="margin-top: 8px;">
+                <div class="session-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                  <select class="session-day">
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                  </select>
+                  <input type="time" class="session-time" placeholder="Time" />
+                  <input type="text" class="session-location" placeholder="Location" style="flex: 1;" />
+                  <button type="button" class="btn btn-danger btn-sm" onclick="removeSession(this)">×</button>
+                </div>
+              </div>
+              <button type="button" class="btn btn-soft btn-sm" onclick="addSession()" style="margin-top: 8px;">+ Add Session</button>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Add Course</button>
+          </form>
+        </div>
+        
+        <div class="card hidden" id="upload-card">
+          <h2>Upload Timetable Image</h2>
+          <p class="tiny muted" style="margin-bottom: 16px;">Upload a photo or screenshot of your university timetable:</p>
+          
+          <div class="upload" id="upload-area">
+            <p>Drag & drop your timetable image here, or click to browse</p>
+            <input type="file" id="timetable-upload" accept="image/*" style="display: none;" />
+          </div>
+          
+          <p class="tiny muted" style="margin-top: 16px;">
+            Tip: Make sure the image is clear and shows all your class times. 
+            You'll be able to review and edit the extracted information.
+          </p>
+        </div>
+      `}
+    </div>
+  `;
+  
+  // Set up event listeners for setup page
+  if (!hasCourses) {
+    // Set up upload area click
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('timetable-upload');
+    
+    if (uploadArea && fileInput) {
+      uploadArea.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', handleFileUpload);
+    }
+    
+    // Set up form submission
+    const courseForm = document.getElementById('course-form');
+    if (courseForm) {
+      courseForm.addEventListener('submit', handleCourseSubmit);
+    }
+  }
+}
+
+/**
+ * Show manual entry form
+ */
+function showManualEntry() {
+  const manualCard = document.getElementById('manual-entry-card');
+  const uploadCard = document.getElementById('upload-card');
+  
+  if (manualCard) manualCard.classList.remove('hidden');
+  if (uploadCard) uploadCard.classList.add('hidden');
+  
+  // Re-render to show the form
+  renderSetupPage();
+}
+
+/**
+ * Show upload option
+ */
+function showUploadOption() {
+  const manualCard = document.getElementById('manual-entry-card');
+  const uploadCard = document.getElementById('upload-card');
+  
+  if (manualCard) manualCard.classList.add('hidden');
+  if (uploadCard) uploadCard.classList.remove('hidden');
+  
+  // Re-render to show the upload option
+  renderSetupPage();
+}
+
+/**
+ * Add a new session row
+ */
+function addSession() {
+  const container = document.getElementById('sessions-container');
+  if (!container) return;
+  
+  const row = document.createElement('div');
+  row.className = 'session-row';
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.alignItems = 'center';
+  row.style.marginBottom = '8px';
+  row.innerHTML = `
+    <select class="session-day">
+      <option value="1">Monday</option>
+      <option value="2">Tuesday</option>
+      <option value="3">Wednesday</option>
+      <option value="4">Thursday</option>
+      <option value="5">Friday</option>
+    </select>
+    <input type="time" class="session-time" placeholder="Time" />
+    <input type="text" class="session-location" placeholder="Location" style="flex: 1;" />
+    <button type="button" class="btn btn-danger btn-sm" onclick="removeSession(this)">×</button>
+  `;
+  
+  container.appendChild(row);
+}
+
+/**
+ * Remove a session row
+ * @param {HTMLElement} button
+ */
+function removeSession(button) {
+  const row = button.closest('.session-row');
+  if (row) {
+    row.remove();
+  }
+}
+
+/**
+ * Handle file upload
+ * @param {Event} e
+ */
+function handleFileUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  // In a real implementation, this would send the image to a backend for OCR processing
+  // For now, we'll just show a preview and message
+  showNotice(`Image uploaded: ${file.name}. In a real implementation, this would be processed to extract your timetable.`, 'success');
+  
+  // Reset input
+  e.target.value = '';
+}
+
+/**
+ * Handle course form submission
+ * @param {Event} e
+ */
+function handleCourseSubmit(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('course-name')?.value;
+  const code = document.getElementById('course-code')?.value;
+  const requirement = parseInt(document.getElementById('course-requirement')?.value) || 75;
+  const color = document.getElementById('course-color')?.value || '#1f7a5f';
+  
+  // Get all sessions
+  const sessionRows = document.querySelectorAll('.session-row');
+  const sessions = [];
+  
+  sessionRows.forEach(row => {
+    const daySelect = row.querySelector('.session-day');
+    const timeInput = row.querySelector('.session-time');
+    const locationInput = row.querySelector('.session-location');
+    
+    if (daySelect && timeInput) {
+      sessions.push({
+        dayOfWeek: parseInt(daySelect.value),
+        time: timeInput.value || '09:00',
+        location: locationInput?.value || '',
+        duration: '1 hour'
+      });
+    }
+  });
+  
+  if (!name) {
+    showNotice('Please enter a course name', 'error');
+    return;
+  }
+  
+  if (sessions.length === 0) {
+    showNotice('Please add at least one session', 'error');
+    return;
+  }
+  
+  // Create course
+  const course = {
+    id: generateId(),
+    name: name,
+    code: code || '',
+    requirement: requirement,
+    color: color,
+    sessions: sessions
+  };
+  
+  // Save course
+  const userId = currentUser?.id || 'demo';
+  const courses = JSON.parse(localStorage.getItem(`scheduology_courses_${userId}`) || '[]');
+  courses.push(course);
+  localStorage.setItem(`scheduology_courses_${userId}`, JSON.stringify(courses));
+  
+  // Update current state
+  currentCourses = courses;
+  
+  showNotice('Course added successfully!', 'success');
+  
+  // Clear form
+  document.getElementById('course-form')?.reset();
+  document.getElementById('sessions-container').innerHTML = '';
+  addSession();
+  
+  // Re-render setup page
+  renderSetupPage();
+}
+
+/**
+ * Render today's classes page
+ */
+function renderTodayPage() {
+  if (!pageEl) return;
+  
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  const classes = getTodaysClasses(currentCourses, today);
+  const todayDateStr = formatDate(today);
+  
+  pageEl.innerHTML = `
+    <div class="page-title">
+      <h1>Today's Classes</h1>
+      <p>${dateStr}</p>
+    </div>
+    
+    ${classes.length > 0 ? `
+      <div class="cards">
+        ${classes.map(cls => {
+          const course = currentCourses.find(c => c.id === cls.courseId);
+          if (!course) return '';
+          
+          const stats = calculateCourseStats(course, allAttendance, 
+            currentSemester?.startDate ? new Date(currentSemester.startDate) : new Date(),
+            currentSemester?.endDate ? new Date(currentSemester.endDate) : new Date(),
+            currentSemester?.country || 'us',
+            currentSemester?.additionalHolidays || []
+          );
+          
+          const todayStatus = allAttendance[todayDateStr]?.[cls.courseId];
+          
+          return `
+            <div class="card">
+              <div class="course-card">
+                <div class="swatch" style="background: ${course.color || '#1f7a5f'}"></div>
+                <div class="grow">
+                  <h2>${course.code || course.name}</h2>
+                  <p class="tiny">${cls.time} - ${cls.location || 'Location not set'}</p>
+                </div>
+                <div>
+                  <span class="chip chip-${stats.status}">${stats.status}</span>
+                </div>
+              </div>
+              
+              <div class="progress-ring" style="margin-top: 16px;">
+                <div class="ring-meta">
+                  <b>${stats.attended}/${stats.totalSessions}</b>
+                  <span class="muted">${Math.round(stats.attendanceRate)}% attended</span>
+                </div>
+              </div>
+              
+              <div class="bar" style="margin-top: 8px;">
+                <i style="width: ${stats.attendanceRate}%; background: ${stats.status === 'risk' ? 'var(--danger)' : stats.status === 'edge' ? 'var(--clay)' : 'var(--pine)'}"></i>
+              </div>
+              
+              <div class="session-actions" style="margin-top: 16px;">
+                ${!todayStatus ? `
+                  <button class="btn btn-primary btn-sm" onclick="markAttendance('${cls.courseId}', 'present', '${todayDateStr}')">Present</button>
+                  <button class="btn btn-danger btn-sm" onclick="markAttendance('${cls.courseId}', 'absent', '${todayDateStr}')">Absent</button>
+                  <button class="btn btn-soft btn-sm" onclick="markAttendance('${cls.courseId}', 'cancelled', '${todayDateStr}')">Cancelled</button>
+                ` : `
+                  <button class="btn btn-ghost btn-sm" disabled>${todayStatus.charAt(0).toUpperCase() + todayStatus.slice(1)}</button>
+                  <button class="btn btn-soft btn-sm" onclick="markAttendance('${cls.courseId}', 'present', '${todayDateStr}')">Change</button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : `
+      <div class="empty">
+        <h3>No classes today</h3>
+        <p>Enjoy your day off!</p>
+        <a href="#setup" class="btn btn-primary">Set up your timetable</a>
+      </div>
+    `}
+  `;
+}
+
 // ============================================
 // HANDLERS
 // ============================================
@@ -794,13 +1220,8 @@ function renderSettingsPage() {
  * Handle demo button click
  */
 function handleDemoClick() {
-  // Set demo mode
   localStorage.setItem('scheduology_demo', 'true');
-  
-  // Create demo data if it doesn't exist
   createDemoData();
-  
-  // Navigate to today's view
   window.location.hash = '#today';
   navigate();
 }
@@ -815,7 +1236,6 @@ function createDemoData() {
     email: 'demo@example.com'
   };
   
-  // Save demo semester
   const today = new Date();
   const semesterStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
   const semesterEnd = new Date(today.getFullYear(), today.getMonth() + 3, 30);
@@ -832,7 +1252,6 @@ function createDemoData() {
   
   localStorage.setItem('scheduology_semester_demo', JSON.stringify(demoSemester));
   
-  // Save demo courses
   const demoCourses = [
     {
       id: 'course-1',
@@ -856,38 +1275,23 @@ function createDemoData() {
         { dayOfWeek: 2, time: '11:00', duration: '1.5 hours', location: 'Room 201' },
         { dayOfWeek: 4, time: '11:00', duration: '1.5 hours', location: 'Room 201' }
       ]
-    },
-    {
-      id: 'course-3',
-      name: 'English Composition',
-      code: 'ENG 101',
-      requirement: 70,
-      color: '#9f2d1f',
-      sessions: [
-        { dayOfWeek: 1, time: '14:00', duration: '1 hour', location: 'Room 301' },
-        { dayOfWeek: 3, time: '14:00', duration: '1 hour', location: 'Room 301' }
-      ]
     }
   ];
   
   localStorage.setItem('scheduology_courses_demo', JSON.stringify(demoCourses));
   
-  // Save demo attendance (some marked as present)
   const demoAttendance = {};
   const startDate = new Date(semesterStart);
   const todayDate = new Date();
   
-  // Mark some days as present
   for (let d = new Date(startDate); d <= todayDate; d.setDate(d.getDate() + 1)) {
     const dateStr = formatDate(d);
     if (d.getDay() === 1 || d.getDay() === 3 || d.getDay() === 5) {
-      // Monday, Wednesday, Friday
       demoAttendance[dateStr] = {
         'course-1': Math.random() > 0.2 ? 'present' : 'absent'
       };
     }
     if (d.getDay() === 2 || d.getDay() === 4) {
-      // Tuesday, Thursday
       demoAttendance[dateStr] = {
         'course-2': Math.random() > 0.2 ? 'present' : 'absent'
       };
@@ -895,9 +1299,21 @@ function createDemoData() {
   }
   
   localStorage.setItem('scheduology_attendance_demo', JSON.stringify(demoAttendance));
-  
-  // Reload data
   loadSemesterData('demo');
+}
+
+/**
+ * Handle Google login
+ */
+function handleGoogleLogin() {
+  showNotice('Google login will be configured with backend later', 'info');
+}
+
+/**
+ * Handle Google signup
+ */
+function handleGoogleSignup() {
+  showNotice('Google signup will be configured with backend later', 'info');
 }
 
 /**
@@ -915,24 +1331,20 @@ function handleLoginSubmit(e) {
     return;
   }
   
-  // In a real app, you would validate credentials here
-  // For demo purposes, we'll just create a user
+  // For demo purposes, create a user
   const user = {
     id: generateId(),
     email: email,
     name: email.split('@')[0]
   };
   
-  // Save user
   localStorage.setItem('scheduology_user', JSON.stringify(user));
   localStorage.removeItem('scheduology_demo');
   
-  // Reload data
   currentUser = user;
   loadSemesterData(user.id);
   
-  // Navigate to today's view
-  window.location.hash = '#today';
+  window.location.hash = '#setup';
   navigate();
 }
 
@@ -958,7 +1370,6 @@ function handleSignupSubmit(e) {
     return;
   }
   
-  // Create user
   const user = {
     id: generateId(),
     name: name,
@@ -966,9 +1377,10 @@ function handleSignupSubmit(e) {
     defaultRequirement: parseInt(requirement) || 75
   };
   
-  // Save user
   localStorage.setItem('scheduology_user', JSON.stringify(user));
   localStorage.removeItem('scheduology_demo');
+  
+  currentUser = user;
   
   // Create initial semester
   const today = new Date();
@@ -986,13 +1398,9 @@ function handleSignupSubmit(e) {
   };
   
   localStorage.setItem(`scheduology_semester_${user.id}`, JSON.stringify(semester));
-  
-  // Reload data
-  currentUser = user;
   currentSemester = semester;
   
-  // Navigate to semester setup
-  window.location.hash = '#semester';
+  window.location.hash = '#setup';
   navigate();
 }
 
@@ -1000,18 +1408,15 @@ function handleSignupSubmit(e) {
  * Handle logout button click
  */
 function handleLogoutClick() {
-  // Clear user data
   localStorage.removeItem('scheduology_user');
   localStorage.removeItem('scheduology_demo');
   
-  // Clear current state
   currentUser = null;
   currentSemester = null;
   currentCourses = [];
   currentTimetable = null;
   allAttendance = {};
   
-  // Navigate to landing page
   window.location.hash = '#/';
   navigate();
 }
@@ -1045,15 +1450,10 @@ function handleSemesterSubmit(e) {
     additionalHolidays: currentSemester?.additionalHolidays || []
   };
   
-  // Save semester
   localStorage.setItem(`scheduology_semester_${userId}`, JSON.stringify(semester));
-  
-  // Update current state
   currentSemester = semester;
   
   showNotice('Semester saved successfully!', 'success');
-  
-  // Re-render page
   renderSemesterPage();
 }
 
@@ -1087,7 +1487,6 @@ function formatDate(date) {
  * @param {string} type - 'success', 'error', 'info'
  */
 function showNotice(message, type = 'info') {
-  // Create notice element
   const notice = document.createElement('div');
   notice.className = `notice ${type === 'error' ? '' : type === 'success' ? 'ok' : ''}`;
   notice.textContent = message;
@@ -1099,7 +1498,6 @@ function showNotice(message, type = 'info') {
   
   document.body.appendChild(notice);
   
-  // Remove after 3 seconds
   setTimeout(() => {
     notice.remove();
   }, 3000);
@@ -1120,24 +1518,18 @@ function addHoliday() {
   const userId = currentUser?.id || 'demo';
   const semester = currentSemester || {};
   
-  // Add to additional holidays
   const additionalHolidays = semester.additionalHolidays || [];
   if (!additionalHolidays.includes(holidayDate)) {
     additionalHolidays.push(holidayDate);
-    
-    // Update semester
     semester.additionalHolidays = additionalHolidays;
     localStorage.setItem(`scheduology_semester_${userId}`, JSON.stringify(semester));
     currentSemester = semester;
-    
-    // Re-render
     renderSemesterPage();
     showNotice('Holiday added!', 'success');
   } else {
     showNotice('This date is already a holiday', 'error');
   }
   
-  // Clear input
   if (holidayInput) {
     holidayInput.value = '';
   }
@@ -1151,16 +1543,13 @@ function removeHoliday(holidayDate) {
   const userId = currentUser?.id || 'demo';
   const semester = currentSemester || {};
   
-  // Remove from additional holidays
   let additionalHolidays = semester.additionalHolidays || [];
   additionalHolidays = additionalHolidays.filter(h => h !== holidayDate);
   
-  // Update semester
   semester.additionalHolidays = additionalHolidays;
   localStorage.setItem(`scheduology_semester_${userId}`, JSON.stringify(semester));
   currentSemester = semester;
   
-  // Re-render
   renderSemesterPage();
   showNotice('Holiday removed!', 'success');
 }
@@ -1168,26 +1557,22 @@ function removeHoliday(holidayDate) {
 /**
  * Mark attendance for a course
  * @param {string} courseId
- * @param {string} status - 'present', 'absent', 'cancelled'
- * @param {string} dateStr - YYYY-MM-DD
+ * @param {string} status
+ * @param {string} dateStr
  */
 function markAttendance(courseId, status, dateStr) {
   const userId = currentUser?.id || 'demo';
   
-  // Get current attendance
   let attendance = JSON.parse(localStorage.getItem(`scheduology_attendance_${userId}`) || '{}');
   
-  // Update attendance
   if (!attendance[dateStr]) {
     attendance[dateStr] = {};
   }
   attendance[dateStr][courseId] = status;
   
-  // Save
   localStorage.setItem(`scheduology_attendance_${userId}`, JSON.stringify(attendance));
   allAttendance = attendance;
   
-  // Re-render current page
   if (currentView === 'today') {
     renderTodayPage();
   } else if (currentView === 'courses') {
@@ -1234,7 +1619,6 @@ function clearData() {
   if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
     const userId = currentUser?.id || 'demo';
     
-    // Remove all user data
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -1245,14 +1629,12 @@ function clearData() {
     
     keysToRemove.forEach(key => localStorage.removeItem(key));
     
-    // Clear current state
     currentUser = null;
     currentSemester = null;
     currentCourses = [];
     currentTimetable = null;
     allAttendance = {};
     
-    // Navigate to landing page
     window.location.hash = '#/';
     navigate();
     
@@ -1262,9 +1644,6 @@ function clearData() {
 
 /**
  * Get today's classes
- * @param {Array} courses
- * @param {Date} today
- * @returns {Array}
  */
 function getTodaysClasses(courses, today = new Date()) {
   const dayOfWeek = today.getDay();
@@ -1288,7 +1667,6 @@ function getTodaysClasses(courses, today = new Date()) {
     });
   });
   
-  // Sort by time
   return classes.sort((a, b) => {
     const timeA = a.time.split(':').map(Number);
     const timeB = b.time.split(':').map(Number);
@@ -1298,8 +1676,6 @@ function getTodaysClasses(courses, today = new Date()) {
 
 /**
  * Get course attendance
- * @param {string} courseId
- * @returns {Object}
  */
 function getCourseAttendance(courseId) {
   const userId = currentUser?.id || 'demo';
@@ -1318,23 +1694,14 @@ function getCourseAttendance(courseId) {
 
 /**
  * Calculate course statistics
- * @param {Object} course
- * @param {Object} attendance
- * @param {Date} semesterStart
- * @param {Date} semesterEnd
- * @param {string} countryCode
- * @param {Array} additionalHolidays
- * @returns {Object}
  */
 function calculateCourseStats(course, attendance, semesterStart, semesterEnd, countryCode = 'us', additionalHolidays = []) {
   const courseId = course.id;
   const requirement = course.requirement || 75;
   
-  // Get all session dates for this course
   const sessionDates = getCourseSessionDates(course, semesterStart, semesterEnd, countryCode, additionalHolidays);
   const totalSessions = sessionDates.length;
   
-  // Count attendance
   let attended = 0;
   let absent = 0;
   let cancelled = 0;
@@ -1344,15 +1711,9 @@ function calculateCourseStats(course, attendance, semesterStart, semesterEnd, co
     const status = attendance[dateStr]?.[courseId];
     
     switch (status) {
-      case 'present':
-        attended++;
-        break;
-      case 'absent':
-        absent++;
-        break;
-      case 'cancelled':
-        cancelled++;
-        break;
+      case 'present': attended++; break;
+      case 'absent': absent++; break;
+      case 'cancelled': cancelled++; break;
     }
   });
   
@@ -1362,7 +1723,6 @@ function calculateCourseStats(course, attendance, semesterStart, semesterEnd, co
   const canStillMiss = minimumRequired - attendedSessions;
   const sessionsRemaining = totalSessions - attendedSessions - absent;
   
-  // Determine status
   let status = 'safe';
   if (attendanceRate < requirement) {
     status = 'risk';
@@ -1388,12 +1748,6 @@ function calculateCourseStats(course, attendance, semesterStart, semesterEnd, co
 
 /**
  * Get course session dates
- * @param {Object} course
- * @param {Date} semesterStart
- * @param {Date} semesterEnd
- * @param {string} countryCode
- * @param {Array} additionalHolidays
- * @returns {Array<Date>}
  */
 function getCourseSessionDates(course, semesterStart, semesterEnd, countryCode = 'us', additionalHolidays = []) {
   const dates = [];
@@ -1409,25 +1763,19 @@ function getCourseSessionDates(course, semesterStart, semesterEnd, countryCode =
     const targetDay = session.dayOfWeek;
     const [hours, minutes] = session.time.split(':').map(Number);
     
-    // Find first occurrence of this day of week on or after start date
     let current = new Date(start);
     while (current.getDay() !== targetDay) {
       current.setDate(current.getDate() + 1);
     }
     
-    // If this is before the start date, move forward
     if (current < start) {
       current.setDate(current.getDate() + 7);
     }
     
-    // Add all occurrences until end date
     while (current <= end) {
-      // Check if it's a teaching day
       if (isTeachingDay(current, countryCode, additionalHolidays)) {
         dates.push(new Date(current));
       }
-      
-      // Move to next week
       current.setDate(current.getDate() + 7);
     }
   });
@@ -1436,29 +1784,16 @@ function getCourseSessionDates(course, semesterStart, semesterEnd, countryCode =
 }
 
 /**
- * Check if a date is a teaching day
- * @param {Date} date
- * @param {string} countryCode
- * @param {Array} additionalHolidays
- * @returns {boolean}
+ * Check if teaching day
  */
 function isTeachingDay(date, countryCode = 'us', additionalHolidays = []) {
-  // Check if weekend
-  if (isWeekend(date)) {
-    return false;
-  }
+  if (isWeekend(date)) return false;
   
-  // Check additional holidays
   const dateStr = formatDate(date);
-  if (additionalHolidays.includes(dateStr)) {
-    return false;
-  }
+  if (additionalHolidays.includes(dateStr)) return false;
   
-  // Check public holidays (if holidays.js is loaded)
   if (typeof isPublicHoliday === 'function') {
-    if (isPublicHoliday(date, countryCode)) {
-      return false;
-    }
+    if (isPublicHoliday(date, countryCode)) return false;
   }
   
   return true;
@@ -1466,30 +1801,33 @@ function isTeachingDay(date, countryCode = 'us', additionalHolidays = []) {
 
 /**
  * Check if weekend
- * @param {Date} date
- * @returns {boolean}
  */
 function isWeekend(date) {
   const day = date.getDay();
-  return day === 0 || day === 6; // Sunday or Saturday
+  return day === 0 || day === 6;
 }
 
 // ============================================
-// GLOBAL FUNCTIONS (for inline onclick handlers)
+// GLOBAL FUNCTIONS
 // ============================================
 
-// Make functions available globally for inline event handlers
 window.markAttendance = markAttendance;
 window.addHoliday = addHoliday;
 window.removeHoliday = removeHoliday;
 window.exportData = exportData;
 window.clearData = clearData;
+window.handleGoogleLogin = handleGoogleLogin;
+window.handleGoogleSignup = handleGoogleSignup;
+window.showManualEntry = showManualEntry;
+window.showUploadOption = showUploadOption;
+window.addSession = addSession;
+window.removeSession = removeSession;
+window.handleFileUpload = handleFileUpload;
 
 // ============================================
 // INITIALIZE
 // ============================================
 
-// Run initialization when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduology — stay eligible for your finals</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="landing">
+    <div class="wrap">
+      <header class="topbar">
+        <a class="brand" href="#/">
+          <span class="mark">S</span>
+          <strong>Scheduology</strong>
+        </a>
+        <div class="row">
+          <a class="btn btn-ghost" href="#/login">Log in</a>
+          <a class="btn btn-primary" href="#/signup">Create account</a>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <div class="kicker">Built for students who cannot afford a surprise on the attendance sheet</div>
+          <h1>Know, before finals week, whether you can sit the exam.</h1>
+          <p class="lede">
+            Enter your real weekly timetable once. Scheduology counts every lecture of the semester,
+            skips weekends and public holidays, and tells you — course by course — how many classes
+            you still need to attend to stay above your university’s requirement.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#/signup">Start with your semester</a>
+            <a class="btn btn-ghost" href="#/login">I already have an account</a>
+            <button class="btn btn-soft" id="demo-btn" type="button">Open a sample semester</button>
+          </div>
+        </div>
+        <aside class="hero-card">
+          <p class="tiny">Example · Calculus I · 75% required</p>
+          <h2 class="serif" style="margin:8px 0 4px;font-size:1.8rem;">39 of 52 lectures</h2>
+          <p class="tiny">That’s the floor. Miss more than 13 and you are not eligible, no matter how well you write the paper.</p>
+          <div class="stat-row">
+            <div class="stat"><b>12</b><span>attended so far</span></div>
+            <div class="stat"><b>27</b><span>still to attend</span></div>
+            <div class="stat"><b>11</b><span>you can still miss</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="features">
+        <article class="feature">
+          <h3>Your timetable, not a guess</h3>
+          <p>Upload a photo or PDF as a reference, then place each course on the week. The count comes from that grid — not from tapping +1 and hoping.</p>
+        </article>
+        <article class="feature">
+          <h3>Holidays are already out</h3>
+          <p>Weekends, public holidays, midterms, and finals are removed from the teaching calendar. Add cancelled lectures or extra university holidays when they happen.</p>
+        </article>
+        <article class="feature">
+          <h3>A calm daily check-in</h3>
+          <p>Each day you simply say whether you were in the room, away, or the class itself was cancelled. No counters. No jargon.</p>
+        </article>
+      </section>
+      <footer class="site">Scheduology keeps your data on this device. A companion app can come later — the same semester logic will travel with you.</footer>
+    </div>
+  </div>
+
+  <div id="auth" class="auth-shell hidden">
+    <div class="auth-art">
+      <a class="brand" href="#/" style="color:#f7f1e6">
+        <span class="mark" style="background:#f7f1e6;color:#2b5d4c">S</span>
+        <strong>Scheduology</strong>
+      </a>
+      <div>
+        <p class="tiny" style="color:#e6dcc8">For the week you cannot miss</p>
+        <h2>Eligibility should never be a surprise.</h2>
+      </div>
+      <p class="tiny" style="color:#e6dcc8">Set your required rate, map the semester, and check in after class.</p>
+    </div>
+    <div class="auth-form">
+      <div class="form-card" id="auth-card"></div>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <nav class="app-nav">
+      <div class="wrap">
+        <a class="brand" href="#/today">
+          <span class="mark">S</span>
+          <strong>Scheduology</strong>
+        </a>
+        <div class="nav-links" id="nav-links"></div>
+        <div class="row">
+          <span class="tiny" id="nav-user"></span>
+          <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Log out</button>
+        </div>
+      </div>
+    </nav>
+    <main class="wrap page" id="page"></main>
+  </div>
+
+  <script src="js/holidays.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

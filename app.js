@@ -152,6 +152,26 @@ function setupEventListeners() {
       }
     });
   });
+  
+  // Add explicit click handlers for all hash-based navigation links
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const href = link.getAttribute('href');
+      window.location.hash = href;
+      navigate();
+    });
+  });
+  
+  // Theme toggle button in app navigation
+  const themeToggleApp = document.getElementById('theme-toggle-app');
+  if (themeToggleApp) {
+    themeToggleApp.addEventListener('click', () => {
+      if (typeof toggleTheme === 'function') {
+        toggleTheme();
+      }
+    });
+  }
 }
 
 // ============================================

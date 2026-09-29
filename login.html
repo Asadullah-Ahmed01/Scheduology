@@ -14,6 +14,13 @@
       grid-template-columns: 1fr 1fr;
     }
     
+    .theme-toggle-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+    
     .auth-art {
       padding: 2.5rem;
       display: flex;
@@ -160,6 +167,9 @@
   </style>
 </head>
 <body>
+  <div class="theme-toggle-container">
+    <button class="btn btn-ghost btn-sm" id="theme-toggle" type="button" title="Toggle theme" onclick="toggleTheme()"></button>
+  </div>
   <div class="auth-art">
     <a class="brand" href="index.html" style="color:#f7f1e6">
       <span class="mark" style="background:#f7f1e6;color:#2b5d4c">S</span>

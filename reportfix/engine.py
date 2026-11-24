@@ -24,10 +24,10 @@ from difflib import SequenceMatcher
 KEYWORDS = {
     "wifi": {
         "dept": "IS", "label": "WLAN / Internet down", "priority": "MEDIUM",
-        "kw": ["wifi", "wi-fi", "wyfi", "waifi", "internet", "internt",
-               "net chal", "net nahi", "network", "network down", "netwrk",
+        "kw": ["wifi", "wi-fi", "wyfi", "waifi", "wify", "internet", "internt",
+               "net chal", "net nahi", "net band", "network", "network down", "netwrk",
                "signal nahi", "bandwidth", "router", "lan down", "ping",
-               "connectivity", "no net"],
+               "connectivity", "no net", "hotspot nahi"],
     },
     "projector": {
         "dept": "LABS", "label": "Projector not working", "priority": "MEDIUM",
@@ -62,7 +62,7 @@ KEYWORDS = {
         "kw": ["bijli", "bijli chali", "light nahi", "lights nahi", "lights out",
                "lights off", "no light", "light on nahi", "power cut", "power out",
                "powerchali", "power nahi", "load shedding", "fan nahi",
-               "pankha", "pankhe", "fan not", "fan broken", "socket", "switch bord",
+               "pankha", "pankhe", "fan not", "fan broken", "fan chal nahi", "pankha chal nahi", "socket", "switch bord",
                "switchboard", "wiring", "taar", "bulb", "tube light", "tubelight"],
     },
     "electrical-safety": {
@@ -94,14 +94,14 @@ KEYWORDS = {
     },
     "water": {
         "dept": "EE", "label": "Water / plumbing", "priority": "HIGH",
-        "kw": ["paani nahi", "pani nahi", "no water", "water nahi", "tap broken",
+        "kw": ["paani nahi", "pani nahi", "pani band", "paani band", "no water", "water nahi", "tap broken",
                "tap toot", "leak", "leaking", "leakage", "pipe burst", "pipa",
                "sewerage", "sewer", "nali", "ganda paani", "overflow", "sink blocked",
                "washroom ka paani", "flush nahi"],
     },
     "food": {
         "dept": "CAFETERIA", "label": "Food quality / hygiene", "priority": "MEDIUM",
-        "kw": ["khana kharab", "khana basi", "khana thanda", "khana mehnga",
+        "kw": ["khana kharab", "khana basi", "khana thanda", "khana mehnga", "khana saaf nahi",
                "stale food", "food poisoning", "food poisning", "bad food",
                "food quality", "keera nika", " cockroach", "insect in food",
                "baasi khana", "saaf nahi khana", "food stale", "roti kharab"],

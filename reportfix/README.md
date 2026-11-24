@@ -64,9 +64,28 @@ fields is the rule code. The AI layer proposes; code decides.
     brigading detection (3+ brand-new accounts voting together get
     zero-weighted and raise an admin alert).
 
+## Sign-in flow (two pages, no passwords)
+
+1. **Student portal** (default page on open): enter your Student ID
+   (`STU-001 ... STU-007` in the demo) -> student dashboard.
+2. Below the box: **"I am an admin / staff member"** -> separate staff portal
+   page -> enter a staff/admin ID (`STAFF-EE`, `STAFF-CSE`, `STAFF-IS`,
+   `STAFF-LIB`, `STAFF-CAFE`, `STAFF-LABS`, `ADMIN-01`) -> your department's or
+   admin dashboard. Wrong portal gives a clear error, wrong ID is rejected.
+3. **Judge quick access** stays at the bottom of both login pages: one-click
+   sign-in as any user, instant new student (auto-assigned `STU-1xx` ID),
+   reset all data.
+
+The UI uses a stormy-morning palette (overcast blue-gray sky, silver light,
+deep slate contrast), and every issue card shows a 4-step **priority meter**
+(LOW / MEDIUM / HIGH / CRITICAL) with the engine's verdict highlighted.
+Department and priority are decided by the AI engine from the report text
+(content-based: safety hazards are critical regardless of tone; LOUD/urgent
+words cannot move the meter).
+
 ## Judge access
 
-- One-click user switch (header dropdown, no passwords): admin, 6 department
+- One-click user switch (Judge quick access, no passwords): admin, 6 department
   staff, 7 students with different trust histories.
 - `+ New student` creates an instant fresh-trust-50 account and signs you in.
 - `Reset all data` reseeds the demo.

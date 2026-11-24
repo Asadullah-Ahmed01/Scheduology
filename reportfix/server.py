@@ -59,7 +59,7 @@ def get_db():
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(
-  id INTEGER PRIMARY KEY, name TEXT, role TEXT, dept TEXT,
+  id INTEGER PRIMARY KEY, name TEXT, login_id TEXT, role TEXT, dept TEXT,
   trust REAL DEFAULT 50, created_at TEXT, fresh INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS issues(
   id INTEGER PRIMARY KEY, title TEXT, category TEXT, category_label TEXT,
@@ -417,24 +417,28 @@ def seed():
     conn = get_db()
     t = now()
 
-    def U(name, role, dept=None, trust=50, mins=0, fresh=0):
+    def U(name, role, dept=None, trust=50, mins=0, fresh=0, lid=None):
         c = conn.execute(
-            "INSERT INTO users(name, role, dept, trust, created_at, fresh) VALUES(?,?,?,?,?,?)",
-            (name, role, dept, trust, fmt(t - timedelta(minutes=mins)), fresh))
+            "INSERT INTO users(name, login_id, role, dept, trust, created_at, fresh) "
+            "VALUES(?,?,?,?,?,?,?)",
+            (name, lid, role, dept, trust, fmt(t - timedelta(minutes=mins)), fresh))
         return c.lastrowid
 
-    admin = U("Registrar Admin", "admin", None, 100, 60*24*90)
+    admin = U("Registrar Admin", "admin", None, 100, 60*24*90, 0, "ADMIN-01")
+    staff_ids = {"EE": "STAFF-EE", "CSE": "STAFF-CSE", "IS": "STAFF-IS",
+                 "LIBRARY": "STAFF-LIB", "CAFETERIA": "STAFF-CAFE",
+                 "LABS": "STAFF-LABS"}
     staff_names = {"EE": "EE", "CSE": "CSE", "IS": "IS", "LIBRARY": "Library",
                    "CAFETERIA": "Cafeteria", "LABS": "Labs"}
-    staff = {d: U(staff_names[d] + " Staff", "staff", d, 100, 60*24*90)
+    staff = {d: U(staff_names[d] + " Staff", "staff", d, 100, 60*24*90, 0, staff_ids[d])
              for d in DEPARTMENTS}
-    ali = U("Ali Raza", "student", None, 88, 60*24*60)
-    fatima = U("Fatima Khan", "student", None, 72, 60*24*55)
-    bilal = U("Bilal Ahmed", "student", None, 31, 60*24*40)
-    ayesha = U("Ayesha Siddiqui", "student", None, 55, 60*24*30)
-    hamza = U("Hamza Tariq", "student", None, 20, 60*24*20)
-    zainab = U("Zainab Malik", "student", None, 91, 60*24*15)
-    usman = U("Usman Ghani", "student", None, 50, 60*24*3)
+    ali = U("Ali Raza", "student", None, 88, 60*24*60, 0, "STU-001")
+    fatima = U("Fatima Khan", "student", None, 72, 60*24*55, 0, "STU-002")
+    bilal = U("Bilal Ahmed", "student", None, 31, 60*24*40, 0, "STU-003")
+    ayesha = U("Ayesha Siddiqui", "student", None, 55, 60*24*30, 0, "STU-004")
+    hamza = U("Hamza Tariq", "student", None, 20, 60*24*20, 0, "STU-005")
+    zainab = U("Zainab Malik", "student", None, 91, 60*24*15, 0, "STU-006")
+    usman = U("Usman Ghani", "student", None, 50, 60*24*3, 0, "STU-007")
 
     def TE(uid, delta, reason, mins):
         conn.execute("INSERT INTO trust_events(user_id, delta, reason, created_at) "
@@ -580,6 +584,13 @@ class Handler(BaseHTTPRequestHandler):
                 if path == "/api/reset":
                     seed()
                     return self._send(200, {"ok": True, "me": first_admin()})
+                if path == "/api/login":
+                    u = login(b.get("login_id"))
+                    if u:
+                        return self._send(200, {"ok": True, "me": u})
+                    return self._send(200, {"ok": False,
+                        "error": "No account with that ID. Students: use your STU-xxx ID. "
+                                 "Staff/admin: use the staff sign-in below."})
                 if path == "/api/switch":
                     return self._send(200, {"ok": True, "me": user_by_id(b.get("user_id"))})
                 if path == "/api/new_student":
@@ -801,12 +812,20 @@ def first_admin():
     return dict(row)
 
 
+def login(login_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM users WHERE UPPER(login_id)=UPPER(?)",
+                       ((login_id or "").strip(),)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def new_student():
     conn = get_db()
     n = conn.execute("SELECT COUNT(*) c FROM users WHERE role='student'").fetchone()["c"] + 1
-    c = conn.execute("INSERT INTO users(name, role, dept, trust, created_at, fresh) "
-                     "VALUES(?,?,?,?,?,1)",
-                     (f"New Student {n}", "student", None, 50, fmt(now())))
+    c = conn.execute("INSERT INTO users(name, login_id, role, dept, trust, created_at, fresh) "
+                     "VALUES(?,?,?,?,?,?,1)",
+                     (f"New Student {n}", f"STU-{100 + n}", "student", None, 50, fmt(now())))
     conn.commit()
     uid = c.lastrowid
     conn.close()
